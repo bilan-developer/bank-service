@@ -1,0 +1,46 @@
+version: "3.8"
+services:
+
+    postgres:
+      image: postgres:15.2-alpine
+      container_name: ${PROJECT_NAME}-postgres
+      volumes:
+         - "./sourcefiles/postgres:/var/lib/postgresql/data"
+      environment:
+        - POSTGRES_USER=${POSTGRES_USER}
+        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+        - POSTGRES_DB=${POSTGRES_DB}
+      ports:
+       - "5432:5432"
+      networks:
+            private_net:
+                ipv4_address: 172.28.1.2
+    webserver:
+      image: nginx:alpine
+      container_name: ${PROJECT_NAME}-webserver
+      working_dir: /application
+      volumes:
+          - ./application:/application
+          - ./sourcefiles/nginx:/etc/nginx/conf.d
+      ports:
+       - "80:80"
+      networks:
+            private_net:
+                ipv4_address: 172.28.1.3
+
+    php-fpm:
+      build: sourcefiles/php-fpm
+      container_name: ${PROJECT_NAME}-php-fpm
+      working_dir: /application
+      volumes:
+        - ./application:/application
+        - ./sourcefiles/php-fpm/php-ini-overrides.ini:/usr/local/etc/php/conf.d/99-overrides.ini
+      networks:
+          private_net:
+              ipv4_address: 172.28.1.4
+networks:
+    private_net:
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.28.0.0/16
